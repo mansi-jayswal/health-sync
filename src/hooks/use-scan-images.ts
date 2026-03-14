@@ -47,7 +47,7 @@ export function useDeleteScan(studyId: string) {
 export function useStudyScanSignedUrl(
   studyId: string,
   imageId: string,
-  options?: UseQueryOptions<ScanSignedUrl>
+  options?: Omit<UseQueryOptions<ScanSignedUrl>, "queryKey" | "queryFn">
 ) {
   return useQuery({
     queryKey: scanKeys.signedUrl(studyId, imageId),

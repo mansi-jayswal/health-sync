@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAuth, requireRole } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import { sendSuccess, sendError } from "@/lib/utils/api";
 import { updateItemSchema } from "@/types/schemas";
 import { ROLES } from "@/constants/roles";

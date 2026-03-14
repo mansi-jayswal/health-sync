@@ -49,15 +49,23 @@ export async function GET(request: NextRequest) {
   }
 
   const shaped: ReportListItem[] = (data ?? []).map((row) => {
-    const study = row.studies as
-      | {
-          id: string;
-          created_at: string;
-          status: "pending" | "in_review" | "completed";
-          study_types?: { name?: string | null } | null;
-          patients?: { id: string; name: string } | null;
-        }
-      | null;
+    const rawStudy = (row as { studies?: unknown }).studies;
+    const study =
+      Array.isArray(rawStudy) && rawStudy.length > 0
+        ? (rawStudy[0] as {
+            id: string;
+            created_at: string;
+            status: "pending" | "in_review" | "completed";
+            study_types?: { name?: string | null } | null;
+            patients?: { id: string; name: string } | null;
+          })
+        : (rawStudy as {
+            id: string;
+            created_at: string;
+            status: "pending" | "in_review" | "completed";
+            study_types?: { name?: string | null } | null;
+            patients?: { id: string; name: string } | null;
+          } | null);
 
     return {
       id: row.id,

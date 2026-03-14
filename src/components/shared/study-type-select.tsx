@@ -26,7 +26,11 @@ export function StudyTypeSelect({
   const selected = studyTypes?.find((type) => type.id === value);
 
   return (
-    <Select value={value} onValueChange={onChange} disabled={disabled}>
+    <Select
+      value={value}
+      onValueChange={(val) => onChange(val ?? value)}
+      disabled={disabled}
+    >
       <SelectTrigger className="w-full">
         <span className="truncate">
           {selected?.name ?? placeholder}

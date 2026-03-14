@@ -65,7 +65,7 @@ export function InviteUserDialog({
         }
       }}
     >
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button type="button">{triggerLabel}</Button>
       </DialogTrigger>
       <DialogContent>

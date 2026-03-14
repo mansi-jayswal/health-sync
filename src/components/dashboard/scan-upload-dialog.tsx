@@ -138,7 +138,7 @@ export function ScanUploadDialog({
         if (!next) resetState();
       }}
     >
-      <DialogTrigger asChild>
+      <DialogTrigger>
         <Button type="button" variant="outline">
           {triggerLabel}
         </Button>

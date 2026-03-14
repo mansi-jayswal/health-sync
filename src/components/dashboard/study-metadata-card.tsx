@@ -40,6 +40,8 @@ export function StudyMetadataCard({ study, patient }: StudyMetadataCardProps) {
   const { mutateAsync: updateStudy, isPending } = useUpdateStudy();
 
   useEffect(() => {
+    // Sync latest study description into editable state when data changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDescription(study.description ?? "");
   }, [study.description]);
 

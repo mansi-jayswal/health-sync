@@ -65,7 +65,10 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={modality} onValueChange={setModality}>
+        <Select
+          value={modality}
+          onValueChange={(value) => setModality(value ?? "all")}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Filter by modality" />
           </SelectTrigger>

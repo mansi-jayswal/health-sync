@@ -79,7 +79,10 @@ export function RadiologistWorklist() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Select value={status} onValueChange={setStatus}>
+        <Select
+          value={status}
+          onValueChange={(value) => setStatus(value ?? "all")}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -92,7 +95,10 @@ export function RadiologistWorklist() {
           </SelectContent>
         </Select>
 
-        <Select value={modality} onValueChange={setModality}>
+        <Select
+          value={modality}
+          onValueChange={(value) => setModality(value ?? "all")}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Modality" />
           </SelectTrigger>

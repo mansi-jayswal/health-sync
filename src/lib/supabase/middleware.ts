@@ -4,7 +4,7 @@ import { getSupabaseEnv } from "./env";
 import { ROLES, type Role } from "@/constants/roles";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request,
   });
 

@@ -45,7 +45,6 @@ export function useUpdateUserRole() {
     },
     onError: (error: unknown) => {
       // Surface error via generic handler; UI components can also handle directly.
-      // eslint-disable-next-line no-console
       console.error(getErrorMessage(error));
     },
   });
@@ -74,7 +73,6 @@ export function useInviteUser() {
       await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.users.all });
     },
     onError: (error: unknown) => {
-      // eslint-disable-next-line no-console
       console.error(getErrorMessage(error));
     },
   });

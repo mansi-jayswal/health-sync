@@ -60,13 +60,21 @@ export function ScanViewer({
     isError,
     error,
     refetch,
-  } = useStudyScanSignedUrl(studyId, currentImage?.id ?? "", {
-    enabled: Boolean(currentImage?.id),
-  });
+  } = useStudyScanSignedUrl(
+    studyId,
+    currentImage?.id ?? "",
+    currentImage
+      ? {
+          enabled: Boolean(currentImage.id),
+        }
+      : { enabled: false }
+  );
 
-  useStudyScanSignedUrl(studyId, nextImage?.id ?? "", {
-    enabled: Boolean(nextImage?.id),
-  });
+  useStudyScanSignedUrl(
+    studyId,
+    nextImage?.id ?? "",
+    nextImage ? { enabled: Boolean(nextImage.id) } : { enabled: false }
+  );
 
   const resetView = React.useCallback(() => {
     setZoom(1);

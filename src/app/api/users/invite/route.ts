@@ -32,13 +32,19 @@ export async function POST(request: NextRequest) {
     return sendError(error?.message ?? "Failed to send invite.", 400);
   }
 
-  const { error: profileError } = await admin.from("profiles").upsert({
-    id: data.user.id,
-    email: data.user.email ?? email,
-    full_name,
-    role,
-    is_active: true,
-  });
+  const profileValues: import("@/types/database").Database["public"]["Tables"]["profiles"]["Insert"] =
+    {
+      id: data.user.id,
+      email: data.user.email ?? email,
+      full_name,
+      avatar_url: null,
+      role,
+      is_active: true,
+    };
+
+  // Supabase types occasionally mis-infer with service client; safe at runtime.
+  // @ts-expect-error type inference limitation for upsert
+  const { error: profileError } = await admin.from("profiles").upsert(profileValues);
 
   if (profileError) {
     return sendError(profileError.message, 500);
