@@ -50,7 +50,7 @@ function StudyStatusBar({
 }
 
 export default function DashboardPage() {
-  const { role, isLoading: roleLoading } = useRole();
+  const { role } = useRole();
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { data: studies, isLoading: studiesLoading } = useStudies();
 
@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   const studiesByStatus = (studies ?? []).reduce(
     (acc, s) => {
-      acc[s.status] += 1;
+      acc[s.status] = (acc[s.status] ?? 0) + 1;
       return acc;
     },
     { pending: 0, in_review: 0, completed: 0 } as Record<string, number>
@@ -178,9 +178,9 @@ export default function DashboardPage() {
             ) : (
               <>
                 <StudyStatusBar
-                  pending={studiesByStatus.pending}
-                  inReview={studiesByStatus.in_review}
-                  completed={studiesByStatus.completed}
+                  pending={studiesByStatus.pending ?? 0}
+                  inReview={studiesByStatus.in_review ?? 0}
+                  completed={studiesByStatus.completed ?? 0}
                   total={studyCount}
                 />
                 <div className="mt-4 flex flex-wrap gap-6">
