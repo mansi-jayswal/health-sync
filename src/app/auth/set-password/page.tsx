@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,9 +18,11 @@ import {
 import { setPasswordSchema, type SetPasswordInput } from "@/types/schemas/set-password";
 import { createClient } from "@/lib/supabase/client";
 import { getErrorMessage } from "@/lib/utils";
+import { ROUTES } from "@/constants/routes";
 
 export default function SetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [hasSession, setHasSession] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -36,23 +38,38 @@ export default function SetPasswordPage() {
   useEffect(() => {
     let isMounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      setHasSession(Boolean(data.session));
-    });
+    const code = searchParams.get("code");
+    const tokenHash = searchParams.get("token_hash");
+    const type = searchParams.get("type");
 
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    // If user landed here with PKCE code or token_hash (e.g. invite link opened in same browser),
+    // redirect to callback so the server can exchange and set session, then redirect back here.
+    if (!code && !tokenHash) {
+      supabase.auth.getSession().then(({ data }) => {
         if (!isMounted) return;
-        setHasSession(Boolean(session));
-      }
-    );
+        setHasSession(Boolean(data.session));
+      });
 
-    return () => {
-      isMounted = false;
-      subscription.subscription.unsubscribe();
-    };
-  }, [supabase]);
+      const { data: subscription } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (!isMounted) return;
+          setHasSession(Boolean(session));
+        }
+      );
+
+      return () => {
+        isMounted = false;
+        subscription.subscription.unsubscribe();
+      };
+    }
+
+    const params = new URLSearchParams();
+    params.set("redirectTo", ROUTES.SET_PASSWORD);
+    if (code) params.set("code", code);
+    if (tokenHash) params.set("token_hash", tokenHash);
+    if (type) params.set("type", type);
+    router.replace(`/auth/callback?${params.toString()}`);
+  }, [supabase, searchParams, router]);
 
   const PageShell = ({ children }: { children: React.ReactNode }) => (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12">

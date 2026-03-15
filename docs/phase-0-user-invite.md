@@ -33,7 +33,7 @@ Admin fills invite form → Supabase sends email → Radiologist clicks link
 | `POST /api/users/invite` route | Calls Supabase admin invite + inserts profile row |
 | `GET /api/users` route | Returns users list filtered by role |
 | `/auth/set-password` page | Where invited user lands to set their password |
-| Supabase email redirect config | Point invite email to `/auth/set-password` |
+| Supabase email redirect config | Redirect URLs must include `/auth/callback` (invite flow goes callback → set-password) |
 
 ---
 
@@ -43,7 +43,7 @@ Supabase `admin.inviteUserByEmail()` (service-role key, server-side only):
 1. Creates user in `auth.users` with a one-time invite token.
 2. Sends an email with a magic link containing that token.
 3. When user clicks the link, Supabase exchanges the token for a session.
-4. App detects the session type `invite` in the callback and redirects to `/auth/set-password`.
+4. Invite email link sends user to `/auth/callback?redirectTo=/auth/set-password` (with PKCE `code`). Callback exchanges code for a session and redirects to `/auth/set-password`.
 5. User calls `supabase.auth.updateUser({ password })` to set their password.
 6. Done — user is fully onboarded with correct role already in `profiles`.
 
@@ -53,13 +53,15 @@ Supabase `admin.inviteUserByEmail()` (service-role key, server-side only):
 
 ## Supabase Config
 
-Before building, update the **Supabase Auth email invite redirect URL**:
+Before building, ensure **Supabase Redirect URLs** include the auth callback (invite links are built to go through the callback, which then redirects to set-password):
 
 ```
 Supabase Dashboard → Authentication → URL Configuration → Redirect URLs
-Add: https://your-app-url.vercel.app/auth/set-password
-(Also add: http://localhost:3000/auth/set-password for local dev)
+Add: https://your-app-url.vercel.app/auth/callback
+(Also add: http://localhost:3000/auth/callback for local dev)
 ```
+
+The invite API sets `redirectTo` to the callback URL with `redirectTo=/auth/set-password`, so after the user clicks the email link they land on the callback, exchange the code for a session, then are redirected to the set-password page.
 
 Also update the **invite email template** (optional but recommended):
 
@@ -68,6 +70,25 @@ Supabase Dashboard → Authentication → Email Templates → Invite User
 Subject: "You've been invited to HealthScan"
 Body: include {{ .ConfirmationURL }} as the invite link
 ```
+
+### Invite / verification link expiry (time-based)
+
+By default, the email invite link expires after a short period (e.g. 1 hour). To make the link valid for longer **based on time** (so the radiologist has more time to open it once):
+
+1. **Dashboard (if available):**  
+   Supabase Dashboard → **Project Settings** → **Auth** (or **Authentication** → **Providers** → **Email**). Look for **Email OTP Expiration** or similar, and set the value to the desired lifetime in **seconds** (e.g. `86400` = 24 hours). Supabase may cap this (e.g. max 86400).
+
+2. **Management API:**  
+   The auth config key is `mailer_otp_exp` (integer, seconds). You can PATCH it via the [Management API](https://supabase.com/docs/reference/api/auth-config), e.g.:
+
+   ```bash
+   curl -X PATCH "https://api.supabase.com/v1/projects/<PROJECT_REF>/config/auth" \
+     -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"mailer_otp_exp": 86400}'
+   ```
+
+**Important:** The link is **single-use**. Once the user (or an email client prefetch) successfully exchanges the token for a session, that link cannot be used again. So “clicking the link twice” will show “expired” the second time because the first use already consumed the token. Increasing `mailer_otp_exp` only extends how long the link is valid **before** that first use (time-based), not how many times it can be used. If the user’s email client prefetches links (e.g. Safe Links), the token can be consumed before they click; in that case they need a new invite (resend) or to use the 6-digit OTP from the email if your template includes it.
 
 > Show these config steps to the user and ask them to complete before running the invite route.
 
@@ -106,8 +127,9 @@ File: `app/api/users/invite/route.ts`
   5. Return `sendSuccess({ message: 'Invite sent.' }, 201)`.
 
 ```ts
-// redirectTo must point to set-password page:
-const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/set-password`;
+// redirectTo goes through callback so the server can exchange the code and set cookies, then redirect to set-password:
+const callbackWithRedirect = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?redirectTo=${encodeURIComponent('/auth/set-password')}`;
+// inviteUserByEmail(..., { redirectTo: callbackWithRedirect, data: { full_name, role } })
 ```
 
 **Service-role client** — create a separate helper, never use it outside server-side invite/admin routes:
@@ -218,7 +240,7 @@ File: `app/auth/set-password/page.tsx`
 
 **How the session arrives:**
 
-When the invited user clicks the link, Supabase appends session tokens as URL hash fragments (e.g. `#access_token=...&type=invite`). The Supabase client SDK detects these automatically via `onAuthStateChange`. Your `/auth/callback` route handler OR the set-password page itself must call `supabase.auth.exchangeCodeForSession()` or rely on the client SDK to hydrate the session.
+When the invited user clicks the link, Supabase redirects to the app's `/auth/callback` URL with a PKCE `code` (and the `redirectTo` query param). The callback route exchanges the code for a session (setting cookies) and redirects to `/auth/set-password`. If the user instead lands directly on set-password with `code` or `token_hash` in the URL, the set-password page redirects them to the callback so the exchange happens server-side, then they are sent back to set-password with a session.
 
 **Simplest reliable approach — handle in the set-password page directly:**
 
@@ -402,7 +424,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000           # used to build redirectTo U
 - [ ] `InviteUserDialog` — form validates name, email, role before submit.
 - [ ] On successful invite: dialog closes, toast shown, list refreshes with new entry.
 - [ ] On error (duplicate email): error toast shown with readable message.
-- [ ] Supabase redirect URL configured to point to `/auth/set-password`.
+- [ ] Supabase Redirect URLs include `/auth/callback` (invite flow uses callback then redirects to set-password).
 - [ ] `/auth/set-password` is publicly accessible (not blocked by middleware).
 - [ ] Invited user clicks email link → lands on `/auth/set-password` with session active.
 - [ ] Invalid/expired invite link → shows error message with sign-in link.

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireRole } from "@/lib/auth";
 import { ROLES } from "@/constants/roles";
+import { ROUTES } from "@/constants/routes";
 import { sendError, sendSuccess } from "@/lib/utils/api";
 import { userInviteSchema } from "@/types/schemas";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,9 +23,13 @@ export async function POST(request: NextRequest) {
     return sendError("Missing NEXT_PUBLIC_APP_URL.", 500);
   }
 
+  // Route through callback so the server can exchange the code and set session cookies,
+  // then redirect to set-password. Add redirectTo so callback sends user to set-password.
+  const callbackWithRedirect = `${appUrl}/auth/callback?redirectTo=${encodeURIComponent(ROUTES.SET_PASSWORD)}`;
+
   const admin = createAdminClient();
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${appUrl}/auth/set-password`,
+    redirectTo: callbackWithRedirect,
     data: { full_name, role },
   });
 

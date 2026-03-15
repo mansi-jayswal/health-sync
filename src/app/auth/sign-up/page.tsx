@@ -1,12 +1,23 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/auth/auth-form";
 import { ThemeSwitcher } from "@/components/shared/theme-switcher";
+import { createClient } from "@/lib/supabase/server";
+import { ROUTES } from "@/constants/routes";
 
 export default async function SignUpPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; message?: string }>;
 }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    redirect(ROUTES.DASHBOARD);
+  }
+
   const params = await searchParams;
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
