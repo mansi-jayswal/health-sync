@@ -2,8 +2,7 @@
 
 A lightweight, cloud-based imaging management app for small clinics. Upload scans, organize studies, and collaborate with radiologists in one role-aware dashboard.
 
-**Live app:** [https://health-sync-a3qdhmgsq-mansi-jayswals-projects.vercel.app/](https://health-sync-a3qdhmgsq-mansi-jayswals-projects.vercel.app/)
-
+**Live app:** https://health-sync-livid.vercel.app/
 ---
 
 ## Features
